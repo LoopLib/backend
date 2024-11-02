@@ -18,6 +18,8 @@ def upload_file():
     # Check if the request contains a file
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400
+    # Get the file from the request
     file = request.files['file']
+    # Check if the file is empty or not
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
