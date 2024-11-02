@@ -10,3 +10,9 @@ CORS(app)
 app.config['UPLOAD_FOLDER'] = './uploads'
 # Create the upload folder if it doesn't exist
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+# Define the upload route for the server
+@app.route('/upload', methods=['POST'])
+# Define the upload_file function
+def upload_file():
+    
