@@ -23,3 +23,8 @@ def upload_file():
     # Check if the file is empty or not
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
+    
+    # Save the file to the upload folder
+    filename = secure_filename(file.filename)
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(file_path)
