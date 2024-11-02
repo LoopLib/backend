@@ -28,3 +28,9 @@ def upload_file():
     filename = secure_filename(file.filename)
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(file_path)
+
+    # Clean up after processing the file (remove the file)
+    os.remove(file_path)
+    if file_path.endswith('.mp3') and os.path.exists(file_path.replace('.mp3', '.wav')):
+        os.remove(file_path.replace('.mp3', '.wav'))
+    
