@@ -15,4 +15,9 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 @app.route('/upload', methods=['POST'])
 # Define the upload_file function
 def upload_file():
-    
+    # Check if the request contains a file
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
