@@ -1,3 +1,4 @@
+# Description: This file contains the code for the server that will be used to upload the audio files to the server.
 from flask import Flask, request, jsonify
 from werkzeug.utils import secure_filename
 import os
@@ -33,4 +34,8 @@ def upload_file():
     os.remove(file_path)
     if file_path.endswith('.mp3') and os.path.exists(file_path.replace('.mp3', '.wav')):
         os.remove(file_path.replace('.mp3', '.wav'))
-    
+
+# Run the app
+if __name__ == '__main__':
+    # Run the app in debug mode
+    app.run(debug=True)
