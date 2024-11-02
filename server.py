@@ -1,5 +1,6 @@
 # Description: This file contains the code for the server that will be used to upload the audio files to the server.
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import os
 
