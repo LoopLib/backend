@@ -26,6 +26,9 @@ def upload_file():
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
     
+    # Log the uploaded file name to the server console
+    print("Received file:", file.filename)
+    
     # Save the file to the upload folder
     filename = secure_filename(file.filename)
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -33,6 +36,10 @@ def upload_file():
 
     # Clean up after processing the file (remove the file)
     os.remove(file_path)
+
+    # Send a success response back to the client
+    return jsonify({'message': 'File uploaded successfully'}), 200
+
     if file_path.endswith('.mp3') and os.path.exists(file_path.replace('.mp3', '.wav')):
         os.remove(file_path.replace('.mp3', '.wav'))
 
