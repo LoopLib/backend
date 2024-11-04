@@ -8,7 +8,7 @@ import librosa  # Import librosa for BPM detection
 # Import CORS from flask_cors
 app = Flask(__name__)
 # Add CORS to the app
-CORS(app)
+CORS(app, resources={r"/upload": {"origins": "*"}})  # Allow all origins for /upload
 # Set the upload folder
 app.config['UPLOAD_FOLDER'] = './uploads'
 # Create the upload folder if it doesn't exist
@@ -41,6 +41,7 @@ def upload_file():
         y, sr = librosa.load(file_path)
         # Detect the BPM using librosa
         tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
+        bpm = float(tempo)  # Convert to a single float value if necessary
     except Exception as e:
         os.remove(file_path)
         return jsonify({'error': 'Error analyzing file', 'details': str(e)}), 500
@@ -48,11 +49,10 @@ def upload_file():
     # Clean up after processing the file (remove the file)
     os.remove(file_path)
 
-    # Send a success response back to the client
-    return jsonify({'message': 'File uploaded successfully'}), 200
-
+    # Send a success response back to the client, including the BPM
+    return jsonify({'message': 'File uploaded successfully', 'bpm': bpm}), 200
 
 # Run the app
 if __name__ == '__main__':
     # Run the app in debug mode
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0", port=5000)
