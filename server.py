@@ -39,6 +39,8 @@ def upload_file():
     try:
         # Load the audio file using librosa
         y, sr = librosa.load(file_path)
+        # Calculate the onset strength using librosa
+        onset_env = librosa.onset.onset_strength(y=y, sr=sr)
         # Detect the BPM using librosa
         tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
         bpm = float(tempo)  # Convert to a single float value if necessary
