@@ -3,6 +3,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import os
+import librosa  # Import librosa for BPM detection
 
 # Import CORS from flask_cors
 app = Flask(__name__)
@@ -34,14 +35,22 @@ def upload_file():
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(file_path)
 
+    # Detect BPM using librosa
+    try:
+        # Load the audio file using librosa
+        y, sr = librosa.load(file_path)
+        # Detect the BPM using librosa
+        tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
+    except Exception as e:
+        os.remove(file_path)
+        return jsonify({'error': 'Error analyzing file', 'details': str(e)}), 500
+
     # Clean up after processing the file (remove the file)
     os.remove(file_path)
 
     # Send a success response back to the client
     return jsonify({'message': 'File uploaded successfully'}), 200
 
-    if file_path.endswith('.mp3') and os.path.exists(file_path.replace('.mp3', '.wav')):
-        os.remove(file_path.replace('.mp3', '.wav'))
 
 # Run the app
 if __name__ == '__main__':
