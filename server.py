@@ -14,6 +14,10 @@ app.config['UPLOAD_FOLDER'] = './uploads'
 # Create the upload folder if it doesn't exist
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
+# Define all major and minor keys
+MAJOR_KEYS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+MINOR_KEYS = [key + 'm' for key in MAJOR_KEYS]
+
 # Define the upload route for the server
 @app.route('/upload', methods=['POST'])
 # Define the upload_file function
