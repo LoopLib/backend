@@ -23,25 +23,62 @@ def to_scalar(value):
         return float(value[0]) if value.size > 0 else 0.0
     return float(value)
 
+# Define major and minor key profiles as chroma templates
+MAJOR_PROFILE = np.array([
+    [1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1],  # C Major
+    [0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0],  # C# Major
+    [0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0],  # D Major
+    [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0],  # D# Major
+    [1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0],  # E Major
+    [0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0],  # F Major
+    [0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0],  # F# Major
+    [0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0],  # G Major
+    [1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0],  # G# Major
+    [0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0],  # A Major
+    [0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0],  # A# Major
+    [0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1]   # B Major
+])
+
+MINOR_PROFILE = np.array([
+    [1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1],  # C minor
+    [0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0],  # C# minor
+    [0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0],  # D minor
+    [0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0],  # D# minor
+    [1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0],  # E minor
+    [0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0],  # F minor
+    [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0],  # F# minor
+    [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],  # G minor
+    [0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],  # G# minor
+    [0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0],  # A minor
+    [0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0],  # A# minor
+    [0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1]   # B minor
+])
+
+KEY_CLASSIFICATIONS = [
+    'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B',
+    'Cmin', 'C#min', 'Dmin', 'D#min', 'Emin', 'Fmin', 'F#min', 'Gmin', 'G#min', 'Amin', 'A#min', 'Bmin'
+]
+
 def detect_key(y, sr):
     try:
-        # Extract chroma feature using Constant-Q transform, which is effective for pitch-related tasks
+        # Calculate the chroma feature
         chroma = librosa.feature.chroma_cqt(y=y, sr=sr)
         chroma_mean = np.mean(chroma, axis=1)
 
-        # Define the key classifications for all 24 major and minor keys
-        key_classifications = [
-            'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B',
-            'Cmin', 'C#min', 'Dmin', 'D#min', 'Emin', 'Fmin', 'F#min', 'Gmin', 'G#min', 'Amin', 'A#min', 'Bmin'
-        ]
+        # Compute cosine similarity with each profile for major and minor keys
+        similarities_major = [np.dot(chroma_mean, kp) / (np.linalg.norm(chroma_mean) * np.linalg.norm(kp)) for kp in MAJOR_PROFILE]
+        similarities_minor = [np.dot(chroma_mean, kp) / (np.linalg.norm(chroma_mean) * np.linalg.norm(kp)) for kp in MINOR_PROFILE]
+        
+        # Find the best match in both profiles
+        max_major = max(similarities_major)
+        max_minor = max(similarities_minor)
 
-        # Create key profiles based on standard chroma patterns for each key
-        key_profiles = librosa.key_to_notes(key_classifications)
-
-        # Calculate similarity score between chroma mean and each key profile
-        similarities = [np.dot(chroma_mean, kp) / (np.linalg.norm(chroma_mean) * np.linalg.norm(kp)) for kp in key_profiles]
-        best_key_index = np.argmax(similarities)
-        best_key = key_classifications[best_key_index]
+        if max_major >= max_minor:
+            best_key_index = np.argmax(similarities_major)
+            best_key = KEY_CLASSIFICATIONS[best_key_index]
+        else:
+            best_key_index = np.argmax(similarities_minor)
+            best_key = KEY_CLASSIFICATIONS[best_key_index + 12]  # Shift by 12 for minor keys
 
         return best_key
     except Exception as e:
