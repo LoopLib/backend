@@ -23,14 +23,14 @@ def to_scalar(value):
         return float(value[0]) if value.size > 0 else 0.0
     return float(value)
 
-# Define major and minor key profiles as chroma templates
+# Major and minor profiles remain the same
 MAJOR_PROFILE = np.array([
     [1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1],  # C Major
     [0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0],  # C# Major
     [0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0],  # D Major
     [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0],  # D# Major
     [1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0],  # E Major
-    [0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0],  # F Major
+    [0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0],  # F Major
     [0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0],  # F# Major
     [0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0],  # G Major
     [1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0],  # G# Major
@@ -61,15 +61,28 @@ KEY_CLASSIFICATIONS = [
 
 def detect_key(y, sr):
     try:
-        # Calculate the chroma feature
-        chroma = librosa.feature.chroma_cqt(y=y, sr=sr)
-        chroma_mean = np.mean(chroma, axis=1)
+        # Use harmonic-percussive source separation (HPSS) to isolate harmonic content
+        y_harmonic, _ = librosa.effects.hpss(y)
 
-        # Compute cosine similarity with each profile for major and minor keys
-        similarities_major = [np.dot(chroma_mean, kp) / (np.linalg.norm(chroma_mean) * np.linalg.norm(kp)) for kp in MAJOR_PROFILE]
-        similarities_minor = [np.dot(chroma_mean, kp) / (np.linalg.norm(chroma_mean) * np.linalg.norm(kp)) for kp in MINOR_PROFILE]
+        # Apply dynamic range compression to make key detection more robust to volume variations
+        y_harmonic = librosa.effects.percussive(y_harmonic)
+
+        # Extract chroma features using both CQT and STFT methods
+        chroma_cqt = librosa.feature.chroma_cqt(y=y_harmonic, sr=sr)
+        chroma_stft = librosa.feature.chroma_stft(y=y_harmonic, sr=sr)
+
+        # Smooth chroma over time to reduce transient effects
+        chroma_cqt_smooth = np.median(chroma_cqt, axis=1)
+        chroma_stft_smooth = np.median(chroma_stft, axis=1)
+
+        # Combine the smoothed chroma features with weighted averaging
+        combined_chroma = 0.7 * chroma_cqt_smooth + 0.3 * chroma_stft_smooth
+
+        # Calculate cosine similarity with each profile
+        similarities_major = [np.dot(combined_chroma, kp) / (np.linalg.norm(combined_chroma) * np.linalg.norm(kp)) for kp in MAJOR_PROFILE]
+        similarities_minor = [np.dot(combined_chroma, kp) / (np.linalg.norm(combined_chroma) * np.linalg.norm(kp)) for kp in MINOR_PROFILE]
         
-        # Find the best match in both profiles
+        # Find the best matching key
         max_major = max(similarities_major)
         max_minor = max(similarities_minor)
 
@@ -78,13 +91,13 @@ def detect_key(y, sr):
             best_key = KEY_CLASSIFICATIONS[best_key_index]
         else:
             best_key_index = np.argmax(similarities_minor)
-            best_key = KEY_CLASSIFICATIONS[best_key_index + 12]  # Shift by 12 for minor keys
+            best_key = KEY_CLASSIFICATIONS[best_key_index + 12]  # Offset for minor keys
 
         return best_key
     except Exception as e:
         print("Error detecting key:", str(e))
         return "Key detection failed"
-
+        
 # Define the upload route for the server
 @app.route('/upload', methods=['POST'])
 # Define the upload_file function
