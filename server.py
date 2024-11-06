@@ -4,6 +4,9 @@ from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import os
 import librosa  # Import librosa for BPM detection
+from pydub import AudioSegment
+import numpy as np
+
 
 # Import CORS from flask_cors
 app = Flask(__name__)
@@ -13,10 +16,6 @@ CORS(app, resources={r"/upload": {"origins": "*"}})  # Allow all origins for /up
 app.config['UPLOAD_FOLDER'] = './uploads'
 # Create the upload folder if it doesn't exist
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-
-# Define all major and minor keys
-MAJOR_KEYS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
-MINOR_KEYS = [key + 'm' for key in MAJOR_KEYS]
 
 # Define the upload route for the server
 @app.route('/upload', methods=['POST'])
@@ -39,21 +38,38 @@ def upload_file():
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(file_path)
 
-    # Detect BPM using librosa
     try:
-        # Load the audio file using librosa
-        y, sr = librosa.load(file_path)
-        # Detect the BPM using librosa
-        tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
-        bpm = float(tempo)  # Convert to a single float value if necessary
+        # Check if file format needs conversion
+        if file_path.endswith(".mp3"):
+            # Convert .mp3 to .wav using pydub
+            audio = AudioSegment.from_mp3(file_path)
+            file_path_wav = file_path.replace(".mp3", ".wav")
+            audio.export(file_path_wav, format="wav")
+            y, sr = librosa.load(file_path_wav)
+            os.remove(file_path_wav)  # Clean up the .wav file after loading
+        else:
+            y, sr = librosa.load(file_path)
+
+        # Log to confirm file loading
+        print("File loaded successfully. Starting BPM detection.")
+
+       # Use librosa's beat_track function to estimate tempo
+        tempo, _ = librosa.beat.beat_track(y=y, sr=sr, start_bpm=90, tightness=100)
+        
+       # Ensure tempo is a single scalar by taking the first element if it's an array
+        bpm = round(float(tempo[0]), 2) if isinstance(tempo, np.ndarray) else round(tempo, 2)
+
+       # Filter out unreasonable values
+        if not (40 <= bpm <= 200):
+            bpm = "BPM detection failed or is unreliable"
+
     except Exception as e:
+        # Log the specific error details for debugging
+        print("Error analyzing file:", str(e))
         os.remove(file_path)
         return jsonify({'error': 'Error analyzing file', 'details': str(e)}), 500
-
-    # Clean up after processing the file (remove the file)
+    
     os.remove(file_path)
-
-    # Send a success response back to the client, including the BPM
     return jsonify({'message': 'File uploaded successfully', 'bpm': bpm}), 200
 
 # Run the app
