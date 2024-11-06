@@ -23,6 +23,31 @@ def to_scalar(value):
         return float(value[0]) if value.size > 0 else 0.0
     return float(value)
 
+def detect_key(y, sr):
+    try:
+        # Extract chroma feature using Constant-Q transform, which is effective for pitch-related tasks
+        chroma = librosa.feature.chroma_cqt(y=y, sr=sr)
+        chroma_mean = np.mean(chroma, axis=1)
+
+        # Define the key classifications for all 24 major and minor keys
+        key_classifications = [
+            'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B',
+            'Cmin', 'C#min', 'Dmin', 'D#min', 'Emin', 'Fmin', 'F#min', 'Gmin', 'G#min', 'Amin', 'A#min', 'Bmin'
+        ]
+
+        # Create key profiles based on standard chroma patterns for each key
+        key_profiles = librosa.key_to_notes(key_classifications)
+
+        # Calculate similarity score between chroma mean and each key profile
+        similarities = [np.dot(chroma_mean, kp) / (np.linalg.norm(chroma_mean) * np.linalg.norm(kp)) for kp in key_profiles]
+        best_key_index = np.argmax(similarities)
+        best_key = key_classifications[best_key_index]
+
+        return best_key
+    except Exception as e:
+        print("Error detecting key:", str(e))
+        return "Key detection failed"
+
 # Define the upload route for the server
 @app.route('/upload', methods=['POST'])
 # Define the upload_file function
@@ -100,6 +125,8 @@ def upload_file():
         # Filter unreasonable values to detect reliable BPM range
         if not (40 <= bpm_final <= 200):
             bpm_final = "BPM detection failed or is unreliable"
+
+        key = detect_key(y_harmonic, sr)
             
     except Exception as e:
         # Log the specific error details for debugging
@@ -108,7 +135,7 @@ def upload_file():
         return jsonify({'error': 'Error analyzing file', 'details': str(e)}), 500
     
     os.remove(file_path)
-    return jsonify({'message': 'File uploaded successfully', 'bpm': bpm_final}), 200
+    return jsonify({'message': 'File uploaded successfully', 'bpm': bpm_final, 'key': key}), 200
 
 
 # Run the app
