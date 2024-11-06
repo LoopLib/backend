@@ -17,6 +17,12 @@ app.config['UPLOAD_FOLDER'] = './uploads'
 # Create the upload folder if it doesn't exist
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
+# Helper function to safely extract scalar from array or sequence
+def to_scalar(value):
+    if isinstance(value, np.ndarray):
+        return float(value[0]) if value.size > 0 else 0.0
+    return float(value)
+
 # Define the upload route for the server
 @app.route('/upload', methods=['POST'])
 # Define the upload_file function
@@ -39,30 +45,62 @@ def upload_file():
     file.save(file_path)
 
     try:
-        # Check if file format needs conversion
+        # Convert .mp3 to .wav if necessary
         if file_path.endswith(".mp3"):
-            # Convert .mp3 to .wav using pydub
             audio = AudioSegment.from_mp3(file_path)
             file_path_wav = file_path.replace(".mp3", ".wav")
             audio.export(file_path_wav, format="wav")
             y, sr = librosa.load(file_path_wav)
-            os.remove(file_path_wav)  # Clean up the .wav file after loading
+            os.remove(file_path_wav)
         else:
             y, sr = librosa.load(file_path)
 
-        # Log to confirm file loading
         print("File loaded successfully. Starting BPM detection.")
 
-       # Use librosa's beat_track function to estimate tempo
-        tempo, _ = librosa.beat.beat_track(y=y, sr=sr, start_bpm=90, tightness=100)
+        # Step 1: Trim silence from start and end and normalize volume
+        y, _ = librosa.effects.trim(y, top_db=20)
         
-       # Ensure tempo is a single scalar by taking the first element if it's an array
-        bpm = round(float(tempo[0]), 2) if isinstance(tempo, np.ndarray) else round(tempo, 2)
+        # Step 2: Take a stable segment (e.g., middle of track) for consistent BPM
+        middle_start = len(y) // 4
+        middle_end = 3 * len(y) // 4
+        y = y[middle_start:middle_end]
 
-       # Filter out unreasonable values
-        if not (40 <= bpm <= 200):
-            bpm = "BPM detection failed or is unreliable"
+        # Step 3: Harmonic-Percussive Separation to isolate percussive elements
+        y_harmonic, y_percussive = librosa.effects.hpss(y)
+        onset_env = librosa.onset.onset_strength(y=y_percussive, sr=sr)
 
+        # Primary tempo detection using beat_track (standard method)
+        tempo_beat, _ = librosa.beat.beat_track(y=y_percussive, sr=sr, onset_envelope=onset_env, start_bpm=90, tightness=100)
+        tempo_beat = to_scalar(tempo_beat)
+
+        # Secondary tempo detection using librosa.feature.rhythm.tempo
+        tempos = librosa.feature.rhythm.tempo(onset_envelope=onset_env, sr=sr)
+        tempo_onset = to_scalar(np.median(tempos))
+
+        # Tertiary: Alternative parameters to capture other rhythm patterns
+        tempo_beat_alt, _ = librosa.beat.beat_track(y=y_percussive, sr=sr, onset_envelope=onset_env, start_bpm=60, tightness=80)
+        tempo_beat_alt = to_scalar(tempo_beat_alt)
+
+        # Fine detection using smaller window size for high temporal resolution
+        hop_length = 256  # smaller window
+        onset_env_fine = librosa.onset.onset_strength(y=y_percussive, sr=sr, hop_length=hop_length)
+        tempos_fine = librosa.feature.rhythm.tempo(onset_envelope=onset_env_fine, sr=sr, hop_length=hop_length)
+        tempo_fine = to_scalar(np.median(tempos_fine))
+
+        # Aggregate all detected tempos with weighted voting
+        bpm_estimates = [tempo_beat, tempo_onset, tempo_beat_alt, tempo_fine]
+        
+        # Weighted averaging and median filtering
+        bpm_median = np.median(bpm_estimates)
+        bpm_weighted_avg = (0.4 * tempo_beat + 0.3 * tempo_onset + 0.2 * tempo_beat_alt + 0.1 * tempo_fine)
+
+        # Final BPM estimate (median of median and weighted average)
+        bpm_final = round(np.median([bpm_median, bpm_weighted_avg]), 2)
+
+        # Filter unreasonable values to detect reliable BPM range
+        if not (40 <= bpm_final <= 200):
+            bpm_final = "BPM detection failed or is unreliable"
+            
     except Exception as e:
         # Log the specific error details for debugging
         print("Error analyzing file:", str(e))
@@ -70,7 +108,8 @@ def upload_file():
         return jsonify({'error': 'Error analyzing file', 'details': str(e)}), 500
     
     os.remove(file_path)
-    return jsonify({'message': 'File uploaded successfully', 'bpm': bpm}), 200
+    return jsonify({'message': 'File uploaded successfully', 'bpm': bpm_final}), 200
+
 
 # Run the app
 if __name__ == '__main__':
