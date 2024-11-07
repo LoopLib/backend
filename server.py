@@ -101,7 +101,9 @@ def upload_file():
         if not (40 <= bpm_final <= 200):
             bpm_final = "BPM detection failed or is unreliable"
 
-        key = detect_key(y_harmonic, sr)
+        key, confidence = detect_key(y_harmonic, sr)
+        print("Detected Key:", key)
+        print("Confidence Score:", confidence)
             
     except Exception as e:
         # Log the specific error details for debugging
