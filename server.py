@@ -7,6 +7,7 @@ import librosa  # Import librosa for BPM detection
 from pydub import AudioSegment
 import numpy as np
 from detection import detect_key  # Import detect_key function from detection.py
+from pydub.generators import Sine
 
 # Import CORS from flask_cors
 app = Flask(__name__)
@@ -47,7 +48,7 @@ def upload_file():
     file.save(file_path)
 
     try:
-        # Convert .mp3 to .wav if necessary
+        # Convert .mp3 to .wav 
         if file_path.endswith(".mp3"):
             audio = AudioSegment.from_mp3(file_path)
             file_path_wav = file_path.replace(".mp3", ".wav")
@@ -58,6 +59,11 @@ def upload_file():
             y, sr = librosa.load(file_path)
 
         print("File loaded successfully. Starting BPM detection.")
+
+        # Add metronome track at an estimated BPM, for example, 120 BPM
+        bpm_estimate = 120  # This is a placeholder. Set the intended or estimated BPM here.
+        duration = librosa.get_duration(y=y, sr=sr)
+        y = add_metronome(y, sr, bpm_estimate, duration)
 
         # Trim silence from start and end and normalize volume
         # Trim at 20 dB from max value, keeping the middle 50% of the signal
@@ -133,7 +139,30 @@ def upload_file():
     os.remove(file_path)
     return jsonify({'message': 'File uploaded successfully', 'bpm': bpm_final, 'key': key}), 200
 
+def add_metronome(y, sr, bpm, duration):
+    # Generate a metronome click sound (e.g., using a sine wave for simplicity)
+    click_freq = 1000  # 1 kHz for a clear percussive click
+    click = Sine(click_freq).to_audio_segment(duration=50)  # 50 ms duration for the click
+    silence_duration = 60000 / bpm  # Silence between clicks to match BPM
+    metronome = click + AudioSegment.silent(duration=silence_duration - 50)
+    
+    # Create metronome track for the entire audio duration
+    metronome_track = metronome * int(duration / (silence_duration / 1000))
 
+    # Convert audio arrays to AudioSegments for overlay
+    audio_segment = AudioSegment(
+        y.tobytes(),
+        frame_rate=sr,
+        sample_width=y.dtype.itemsize,
+        channels=1
+    )
+    
+    # Overlay metronome and original audio
+    combined_audio = audio_segment.overlay(metronome_track)
+    
+    # Convert back to numpy for librosa processing
+    y_combined = np.array(combined_audio.get_array_of_samples(), dtype=np.float32) / 32768.0
+    return y_combined
 # Run the app
 if __name__ == '__main__':
     # Run the app in debug mode
