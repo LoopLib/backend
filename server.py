@@ -18,8 +18,10 @@ app.config['UPLOAD_FOLDER'] = './uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Helper function to safely extract scalar from array or sequence
+# In order to handle numpy arrays and other sequence types
 def to_scalar(value):
     if isinstance(value, np.ndarray):
+        # Convert numpy array to float
         return float(value[0]) if value.size > 0 else 0.0
     return float(value)
         
@@ -57,40 +59,57 @@ def upload_file():
 
         print("File loaded successfully. Starting BPM detection.")
 
-        # Step 1: Trim silence from start and end and normalize volume
+        # Trim silence from start and end and normalize volume
+        # Trim at 20 dB from max value, keeping the middle 50% of the signal
         y, _ = librosa.effects.trim(y, top_db=20)
         
-        # Step 2: Take a stable segment (e.g., middle of track) for consistent BPM
+        # Take a stable segment for consistent BPM
+        # Take the middle half of the signal to avoid intro/outro variations
         middle_start = len(y) // 4
         middle_end = 3 * len(y) // 4
+        # Extract the middle half of the signal
         y = y[middle_start:middle_end]
 
-        # Step 3: Harmonic-Percussive Separation to isolate percussive elements
+        # Harmonic-Percussive Separation to isolate percussive elements
+        # y_harmonic: harmonic component of the audio signal
+        # y_percussive: percussive component of the audio signal 
+        # How is working: The harmonic component contains the melodic content, while the percussive component contains the rhythmic content
         y_harmonic, y_percussive = librosa.effects.hpss(y)
         onset_env = librosa.onset.onset_strength(y=y_percussive, sr=sr)
 
-        # Primary tempo detection using beat_track (standard method)
+        # Primary tempo detection using beat_track 
+        # tempo_beat: estimated tempo in beats per minute (BPM)
+        # How is working: The start_bpm parameter is set to 90 to detect faster tempos
         tempo_beat, _ = librosa.beat.beat_track(y=y_percussive, sr=sr, onset_envelope=onset_env, start_bpm=90, tightness=100)
+        # Convert tempo to scalar value
         tempo_beat = to_scalar(tempo_beat)
 
         # Secondary tempo detection using librosa.feature.rhythm.tempo
+        # tempo_onset: estimated tempo using onset envelope
+        # How is working: The tempo is estimated using the onset envelope
         tempos = librosa.feature.rhythm.tempo(onset_envelope=onset_env, sr=sr)
         tempo_onset = to_scalar(np.median(tempos))
 
         # Tertiary: Alternative parameters to capture other rhythm patterns
+        # How is working: The start_bpm parameter is set to 60 to detect slower tempos
         tempo_beat_alt, _ = librosa.beat.beat_track(y=y_percussive, sr=sr, onset_envelope=onset_env, start_bpm=60, tightness=80)
         tempo_beat_alt = to_scalar(tempo_beat_alt)
 
         # Fine detection using smaller window size for high temporal resolution
+        # How is working: The hop_length parameter is set to 256 to use a smaller window size
         hop_length = 256  # smaller window
+        # Compute onset strength using the percussive signal
         onset_env_fine = librosa.onset.onset_strength(y=y_percussive, sr=sr, hop_length=hop_length)
+        # Estimate tempo using the onset envelope with a smaller window size
         tempos_fine = librosa.feature.rhythm.tempo(onset_envelope=onset_env_fine, sr=sr, hop_length=hop_length)
+        # Compute the median tempo from the fine detection
         tempo_fine = to_scalar(np.median(tempos_fine))
 
         # Aggregate all detected tempos with weighted voting
         bpm_estimates = [tempo_beat, tempo_onset, tempo_beat_alt, tempo_fine]
         
         # Weighted averaging and median filtering
+        # bpm_median: median of all BPM estimates
         bpm_median = np.median(bpm_estimates)
         bpm_weighted_avg = (0.4 * tempo_beat + 0.3 * tempo_onset + 0.2 * tempo_beat_alt + 0.1 * tempo_fine)
 
