@@ -6,7 +6,7 @@ import os
 import librosa  # Import librosa for BPM detection
 from pydub import AudioSegment
 import numpy as np
-from keyDetection import detect_key
+from key_detection import detect_key
 from pydub.generators import Sine
 
 # Import CORS from flask_cors
