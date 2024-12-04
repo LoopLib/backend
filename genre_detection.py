@@ -9,3 +9,21 @@ with open(MODEL_PATH, 'rb') as model_file:
     genre_model = pickle.load(model_file)
 
 
+# Function to extract features for genre detection
+def extract_features(y, sr):
+    try:
+        # Extract MFCCs, chroma, and spectral contrast as features
+        mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
+        chroma = librosa.feature.chroma_stft(y=y, sr=sr)
+        spectral_contrast = librosa.feature.spectral_contrast(y=y, sr=sr)
+
+        # Aggregate features (mean and standard deviation)
+        mfcc_mean = np.mean(mfcc, axis=1)
+        chroma_mean = np.mean(chroma, axis=1)
+        spectral_contrast_mean = np.mean(spectral_contrast, axis=1)
+
+        features = np.concatenate([mfcc_mean, chroma_mean, spectral_contrast_mean])
+        return features
+    except Exception as e:
+        print("Error extracting features:", str(e))
+        return None
