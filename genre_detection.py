@@ -27,3 +27,17 @@ def extract_features(y, sr):
     except Exception as e:
         print("Error extracting features:", str(e))
         return None
+    
+# Function to predict genre using the pre-trained model
+def detect_genre(y, sr):
+    try:
+        features = extract_features(y, sr)
+        if features is None:
+            raise ValueError("Feature extraction failed.")
+
+        # Predict genre using the pre-trained model
+        genre_prediction = genre_model.predict([features])[0]
+        return genre_prediction
+    except Exception as e:
+        print("Error detecting genre:", str(e))
+        return "Unknown"
