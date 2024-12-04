@@ -7,3 +7,5 @@ MODEL_PATH = './genre_detection_model.pkl'
 
 with open(MODEL_PATH, 'rb') as model_file:
     genre_model = pickle.load(model_file)
+
+
