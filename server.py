@@ -7,7 +7,6 @@ from pydub import AudioSegment
 import numpy as np
 from key_detection import detect_key
 from bpm_detection import detect_bpm  # Import the BPM detection function
-from genre_detection import detect_genre  # Import the genre detection function
 import warnings
 
 # Suppress warnings from librosa
@@ -57,24 +56,15 @@ def upload_file():
         key, confidence = detect_key(y_harmonic, sr)
         print(f"Detected Key: {key} with confidence {confidence}%")
 
-         # Call the genre detection function
-        genre_prediction = detect_genre(y, sr)
-        print(f"Predicted Genre: {genre_prediction}")
-
     except Exception as e:
         # Log the error details
         print("Error analyzing file:", str(e))
         os.remove(file_path)
         return jsonify({'error': 'Error analyzing file', 'details': str(e)}), 500
 
-   # Clean up uploaded file
+    # Clean up uploaded file
     os.remove(file_path)
-    return jsonify({
-        'message': 'File uploaded successfully',
-        'bpm': bpm_final,
-        'key': key,
-        'genre': genre_prediction
-    }), 200
+    return jsonify({'message': 'File uploaded successfully', 'bpm': bpm_final, 'key': key}), 200
 
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0", port=5000)
