@@ -13,9 +13,28 @@ import warnings
 warnings.filterwarnings('ignore')
 
 app = Flask(__name__)
-CORS(app, resources={r"/upload": {"origins": "*"}})
+
+# Enable CORS for all routes and all origins
+CORS(app, resources={r"/*": {"origins": "*"}})
 app.config['UPLOAD_FOLDER'] = './uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+@app.route('/analyze_segment', methods=['POST'])
+def analyze_segment():
+    try:
+        data = request.json
+        segment = np.array(data.get('segment', []))
+        sr = data.get('sr', 44100)
+
+        if len(segment) == 0:
+            raise ValueError("Received empty audio segment for analysis")
+
+        key, confidence = detect_key(segment, sr)
+        print(f"Detected Key: {key}, Confidence: {confidence}%")
+        return jsonify({'key': key, 'confidence': confidence}), 200
+    except Exception as e:
+        print("Error analyzing segment:", str(e))
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
