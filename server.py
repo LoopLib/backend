@@ -5,12 +5,12 @@ import os
 import librosa
 from pydub import AudioSegment
 import numpy as np
-import json
-import subprocess
+import warnings
+import boto3
+
 from key_detection import detect_key
 from bpm_detection import detect_bpm 
 from fingerprint import generate_fingerprint
-import warnings
 
 # Suppress warnings from librosa
 warnings.filterwarnings('ignore')
@@ -21,8 +21,6 @@ app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 app.config['UPLOAD_FOLDER'] = './uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-
-fingerprint_db = {}
 
 @app.route('/analyze_segment', methods=['POST'])
 def analyze_segment():
@@ -49,7 +47,6 @@ def upload_file():
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
 
-    # Log the uploaded file name
     print("Received file:", file.filename)
 
     filename = secure_filename(file.filename)
@@ -80,12 +77,11 @@ def upload_file():
         key, confidence = detect_key(y_harmonic, sr)
         print(f"Detected Key: {key} with confidence {confidence}%")
 
-        # Generate fingerprint using the new module
+        # Generate fingerprint using your fingerprint module
         fingerprint = generate_fingerprint(file_path)
         print(f"Generated Fingerprint: {fingerprint}")
-        
+
     except Exception as e:
-        # Log the error details
         print("Error analyzing file:", str(e))
         os.remove(file_path)
         return jsonify({'error': 'Error analyzing file', 'details': str(e)}), 500
@@ -101,4 +97,3 @@ def upload_file():
 
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0", port=5000, use_reloader=False)
-
