@@ -8,7 +8,8 @@ import numpy as np
 import json
 import subprocess
 from key_detection import detect_key
-from bpm_detection import detect_bpm  # Import the BPM detection function
+from bpm_detection import detect_bpm 
+from fingerprint import generate_fingerprint
 import warnings
 
 # Suppress warnings from librosa
@@ -79,6 +80,10 @@ def upload_file():
         key, confidence = detect_key(y_harmonic, sr)
         print(f"Detected Key: {key} with confidence {confidence}%")
 
+        # Generate fingerprint using the new module
+        fingerprint = generate_fingerprint(file_path)
+        print(f"Generated Fingerprint: {fingerprint}")
+        
     except Exception as e:
         # Log the error details
         print("Error analyzing file:", str(e))
@@ -87,7 +92,12 @@ def upload_file():
 
     # Clean up uploaded file
     os.remove(file_path)
-    return jsonify({'message': 'File uploaded successfully', 'bpm': bpm_final, 'key': key}), 200
+    return jsonify({
+        'message': 'File uploaded successfully',
+        'bpm': bpm_final,
+        'key': key,
+        'fingerprint': fingerprint
+    }), 200
 
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0", port=5000, use_reloader=False)
