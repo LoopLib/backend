@@ -5,6 +5,8 @@ import os
 import librosa
 from pydub import AudioSegment
 import numpy as np
+import json
+import subprocess
 from key_detection import detect_key
 from bpm_detection import detect_bpm  # Import the BPM detection function
 import warnings
@@ -18,6 +20,8 @@ app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 app.config['UPLOAD_FOLDER'] = './uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+fingerprint_db = {}
 
 @app.route('/analyze_segment', methods=['POST'])
 def analyze_segment():
