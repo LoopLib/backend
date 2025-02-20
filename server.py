@@ -10,6 +10,7 @@ import boto3
 
 from key_detection import detect_key
 from bpm_detection import detect_bpm 
+from instrument_detection import classify_audio
 from fingerprint import generate_fingerprint
 
 # Suppress warnings from librosa
@@ -76,6 +77,9 @@ def upload_file():
         # Call the key detection function
         key, confidence = detect_key(y_harmonic, sr)
         print(f"Detected Key: {key} with confidence {confidence}%")
+
+        detected_instrument = classify_audio(file_path)
+        print(f"Detected Instrument: {detected_instrument}")
 
         # Generate fingerprint using your fingerprint module
         fingerprint = generate_fingerprint(file_path)
