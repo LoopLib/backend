@@ -42,4 +42,13 @@ instrument_list = [
     "Steel drum"
 ]
 
+# Convert the list into a set for fast lookup
+instrument_set = set(instrument_list)
+
+def load_audio(file_path, target_sr=16000):
+    """Loads an audio file and resamples it to 16kHz mono."""
+    y, sr = librosa.load(file_path, sr=target_sr, mono=True)
+    print(f"✅ Loaded audio: {file_path}, Sample Rate: {sr}, Audio Shape: {y.shape}")
+    return y, sr
+
 
