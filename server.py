@@ -96,6 +96,7 @@ def upload_file():
         'message': 'File uploaded successfully',
         'bpm': bpm_final,
         'key': key,
+        'instrument': detected_instrument,
         'fingerprint': fingerprint
     }), 200
 

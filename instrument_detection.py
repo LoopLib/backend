@@ -52,8 +52,10 @@ def load_audio(file_path, target_sr=16000):
     return y, sr
 
 def classify_audio(file_path):
-    """Classifies an audio file using YAMNet and returns the most likely instrument
-    (based on our expanded instrument list)."""
+    """
+    Classifies an audio file using YAMNet. If a vocal/speech class is detected among
+    the top predictions, it outputs "Vocals". Otherwise, it checks for instruments.
+    """
     y, sr = load_audio(file_path)
     
     # Run YAMNet model (scores shape: [time_steps, 521])
@@ -68,18 +70,27 @@ def classify_audio(file_path):
     top_classes = [all_classes[i] for i in top_indices]
     print("🔍 Raw top predictions:", top_classes)
     
-    # Filter for labels that are in our instrument set
+    # Check for vocals: filter predictions that contain "speech" (case-insensitive)
+    vocal_predictions = [(class_name, mean_scores[i]) 
+                         for i, class_name in zip(top_indices, top_classes)
+                         if "speech" in class_name.lower()]
+    
+    if vocal_predictions:
+        vocal_predictions.sort(key=lambda x: x[1], reverse=True)
+        best_vocal = vocal_predictions[0][0]
+        print(f"🎤 Recognized vocals: {best_vocal}")
+        return "Vocals"
+    
+    # If no vocals, filter for instrument labels
     detected_instruments = [(class_name, mean_scores[i]) 
                             for i, class_name in zip(top_indices, top_classes)
                             if class_name in instrument_set]
     
     if detected_instruments:
-        # Sort by confidence (score) descending and pick the highest one
         detected_instruments.sort(key=lambda x: x[1], reverse=True)
         best_instrument = detected_instruments[0][0]
         print(f"🎸 Most likely instrument: {best_instrument}")
         return best_instrument
     
-    print("❌ No instrument detected.")
+    print("❌ No instrument or vocals detected.")
     return "Unknown"
-
