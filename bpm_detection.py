@@ -68,9 +68,10 @@ def detect_bpm(y, sr):
         
         # Step 10: Aggregate BPM estimates
         bpm_estimates = [bpm_autocorr, bpm_tempogram, tempo_beat]
-        bpm_final = round(float(np.median(bpm_estimates)), 2)
+        bpm_final = round(float(np.median(bpm_estimates)))
         print(f"Final BPM estimate: {bpm_final}")
-        
+
+    
         if not (bpm_min <= bpm_final <= bpm_max):
             print("BPM validation failed.")
             return "BPM detection failed or is unreliable"
