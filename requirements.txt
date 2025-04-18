@@ -1,0 +1,10 @@
+flask
+flask_cors
+librosa
+numpy
+pandas
+scipy
+joblib
+tensorflow-hub
+pydub
+boto3
