@@ -55,6 +55,8 @@ instrument_list = [
     "Steel drum"
 ]
 
+# Reference: https://www.tensorflow.org/hub/tutorials/yamnet
+
 # Convert the instrument list into a set for faster lookup operations
 instrument_set = set(instrument_list)
 

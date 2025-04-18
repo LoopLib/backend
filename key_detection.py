@@ -1,6 +1,8 @@
 import numpy as np
 import librosa
 
+# Reference: https://librosa.org/doc/latest/generated/librosa.key_to_notes.html
+
 # Krumhansl-Schmuckler key profiles for major and minor keys used in order to improve key detection
 MAJOR_PROFILE_BASE = np.array([6.35, 2.23, 3.48, 2.33, 4.38, 4.09,
                                2.52, 5.19, 2.39, 3.66, 2.29, 2.88])

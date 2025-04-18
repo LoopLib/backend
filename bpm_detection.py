@@ -1,6 +1,8 @@
 import librosa  # Library for audio analysis
 import numpy as np  # Library for numerical operations
 
+# Reference: https://librosa.org/doc/main/generated/librosa.beat.beat_track.html
+
 def to_scalar(value):
     """Converts a value to a scalar float, handling arrays/lists safely."""
     if isinstance(value, (np.ndarray, list)):  # Check if value is a numpy array or list

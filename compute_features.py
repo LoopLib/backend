@@ -5,6 +5,8 @@ import librosa  # For audio processing and feature extraction
 from scipy import stats  # For statistical computations
 from collections import OrderedDict  # To maintain the order of statistics in feature calculations
 
+# Reference: https://github.com/mdeff/fma/blob/master/features.py
+
 # Create a MultiIndex for audio features with feature type, statistic, and number
 def fma_feature_columns():
     feature_sizes = dict(
