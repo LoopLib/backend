@@ -66,7 +66,7 @@ def load_audio(file_path, target_sr=16000):
     y, sr = librosa.load(file_path, sr=target_sr, mono=True)
     
     # Print debug information about the loaded audio
-    print(f"Loaded audio: {file_path}, Sample Rate: {sr}, Audio Shape: {y.shape}")
+    # print(f"Loaded audio: {file_path}, Sample Rate: {sr}, Audio Shape: {y.shape}")
     
     # Return the audio waveform and sample rate
     return y, sr
@@ -83,7 +83,7 @@ def classify_audio(file_path):
     scores, embeddings, spectrogram = yamnet_model(y)
     
     # Print the shape of the scores array for debugging
-    print(f"Scores shape: {scores.shape}")
+    # print(f"Scores shape: {scores.shape}")
     
     # Average prediction scores across time steps to get a single prediction vector
     mean_scores = np.mean(scores.numpy(), axis=0)
@@ -95,7 +95,7 @@ def classify_audio(file_path):
     top_classes = [all_classes[i] for i in top_indices]
     
     # Print raw top predicted class names
-    print("Raw top predictions:", top_classes)
+    # print("Raw top predictions:", top_classes)
     
     # Filter the top classes for any vocal-related terms
     vocal_predictions = [(class_name, mean_scores[i]) 
@@ -111,7 +111,7 @@ def classify_audio(file_path):
         best_vocal = vocal_predictions[0][0]
         
         # Print the detected vocal class
-        print(f"Recognized vocals: {best_vocal}")
+        # print(f"Recognized vocals: {best_vocal}")
         
         # Return "Vocals" as the classification result
         return "Vocals"
@@ -130,13 +130,13 @@ def classify_audio(file_path):
         best_instrument = detected_instruments[0][0]
         
         # Print the most likely detected instrument
-        print(f"Most likely instrument: {best_instrument}")
+        # print(f"Most likely instrument: {best_instrument}")
         
         # Return the instrument name as the classification result
         return best_instrument
     
     # If neither vocals nor instruments are detected, print fallback message
-    print("No instrument or vocals detected.")
+    # print("No instrument or vocals detected.")
     
     # Return "Unknown" as the classification result
     return "Unknown"

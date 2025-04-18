@@ -115,8 +115,8 @@ def compute_features_from_file(file_path):
 
         final_array = features.values.reshape(1, -1).astype(np.float32)  # Convert to 2D array with float32 type
 
-        print("Final feature shape:", final_array.shape)  # Print shape info
-        print("Final mean/std:", np.mean(final_array), "/", np.std(final_array))  # Print stats of features
+        # print("Final feature shape:", final_array.shape)  # Print shape info
+        # print("Final mean/std:", np.mean(final_array), "/", np.std(final_array))  # Print stats of features
 
         return final_array  # Return the computed feature array
 

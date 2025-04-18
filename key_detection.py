@@ -43,25 +43,25 @@ def detect_key(y, sr):
         # y=y is the audio time series, sr=sr is the sample rate
         # Reference: https://librosa.org/doc/main/generated/librosa.pitch_tuning.html
         tuning = librosa.estimate_tuning(y=y, sr=sr)
-        print("Estimated tuning:", tuning)  # Debug: check tuning value
+        # print("Estimated tuning:", tuning)  # Debug: check tuning value
 
         # Compute energy-normalized chroma features (Chroma CENS)
         # Chroma features are used to represent the harmonic content of the audio signal
         # Chroma CENS provides robustness to noise and variations in timbre (instrumentation)
         # CENS: https://librosa.org/doc/main/generated/librosa.feature.chroma_cens.html
         chroma = librosa.feature.chroma_cens(y=y, sr=sr, tuning=tuning)
-        print("Chroma CENS shape:", chroma.shape)  # Debug: check chroma shape
+        # print("Chroma CENS shape:", chroma.shape)  # Debug: check chroma shape
 
         # Average chroma over time to get a single chroma vector
         # To summarize the harmonic content of the entire audio signal
         # axis=1 means averaging along the time axis
         chroma_mean = np.mean(chroma, axis=1)
-        print("Chroma mean:", chroma_mean)  # Debug: check chroma mean
+        # print("Chroma mean:", chroma_mean)  # Debug: check chroma mean
 
         # Normalize the chroma vector to compare the chroma vector with the key profiles
         # Reference: https://numpy.org/doc/stable/reference/generated/numpy.linalg.norm.html
         chroma_norm = chroma_mean / np.linalg.norm(chroma_mean)
-        print("Normalized chroma vector:", chroma_norm)  # Debug: check chroma normalization
+        # print("Normalized chroma vector:", chroma_norm)  # Debug: check chroma normalization
 
         # Compute similarities with major and minor profiles using dot product
         # Purpose is to find the key with the highest similarity score
@@ -69,8 +69,8 @@ def detect_key(y, sr):
         # dot product = sum of the element-wise products
         similarities_major = np.dot(MAJOR_PROFILES, chroma_norm)
         similarities_minor = np.dot(MINOR_PROFILES, chroma_norm)
-        print("Similarities Major:", similarities_major)
-        print("Similarities Minor:", similarities_minor)
+        # print("Similarities Major:", similarities_major)
+        # print("Similarities Minor:", similarities_minor)
 
         # Select the key with the highest similarity score
         max_major = np.max(similarities_major)

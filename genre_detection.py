@@ -38,24 +38,24 @@ def predict_genre(file_path):
     genre = label_enc.inverse_transform(prediction)[0]
 
     # Print the shape of the extracted features
-    print("Feature shape:", features.shape)
+    # print("Feature shape:", features.shape)
 
     # Print the expected input shape for the scaler
-    print("Scaler expects:", scaler.mean_.shape)
+    # print("Scaler expects:", scaler.mean_.shape)
 
     # Print statistical properties of the features before scaling
-    print("Feature stats before scaling:")
-    print("Mean:", np.mean(features))  # Mean of raw features
-    print("Std:", np.std(features))    # Standard deviation of raw features
-    print("Min:", np.min(features))    # Minimum value in raw features
-    print("Max:", np.max(features))    # Maximum value in raw features
+    # print("Feature stats before scaling:")
+    # print("Mean:", np.mean(features))  # Mean of raw features
+    # print("Std:", np.std(features))    # Standard deviation of raw features
+    # print("Min:", np.min(features))    # Minimum value in raw features
+    # print("Max:", np.max(features))    # Maximum value in raw features
 
     # Get the probability distribution over all classes
     proba = model.predict_proba(features_scaled)[0]
 
     # Print the probability of each genre
-    for label, p in zip(label_enc.classes_, proba):
-        print(f"{label}: {p:.4f}")
+    # for label, p in zip(label_enc.classes_, proba):
+        # print(f"{label}: {p:.4f}")
 
     # Return the predicted genre and the associated confidence
     return genre, confidence
