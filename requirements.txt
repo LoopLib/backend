@@ -8,3 +8,4 @@ joblib
 tensorflow-hub
 pydub
 boto3
+gunicorn
