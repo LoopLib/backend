@@ -7,21 +7,8 @@ import joblib
 # Import numpy for numerical operations
 import numpy as np
 
-import os 
-
-import urllib
-
 # Load the pre-trained Random Forest model from a file
-model_path = os.path.join(os.path.dirname(__file__), "rf.joblib")
-
-if not os.path.exists(model_path):
-    print("Downloading rf.joblib from S3...")
-    urllib.request.urlretrieve(
-        "https://looplib-audio-bucket.s3.amazonaws.com/models/rf.joblib",
-        model_path
-    )
-
-model = joblib.load(model_path)
+model = joblib.load("rf.joblib")
 
 # Load the pre-fitted scaler used to normalize the features
 scaler = joblib.load("scaler.joblib")
