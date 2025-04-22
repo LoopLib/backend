@@ -22,40 +22,16 @@ class_map_path = yamnet_model.class_map_path().numpy().decode('utf-8')
 # Load all class names (display names in column 2) from the class map CSV
 all_classes = np.genfromtxt(class_map_path, dtype=str, delimiter=',', skip_header=1, usecols=2)
 
-# Define an expanded list of musical instruments to check for
-instrument_list = [
-    "Accordion",
-    "Acoustic guitar", "Acoustic guitar (nylon)",
-    "Bass drum", "Bass drum (acoustic)",
-    "Bass guitar",
-    "Cello",
-    "Clarinet",
-    "Drum", "Drum kit", "Snare drum", "Cymbal",
-    "Electric guitar", "Electric guitar (jazz)", "Electric guitar (clean)",
-    "Electric piano",
-    "Flute",
-    "Glockenspiel",
-    "Harpsichord",
-    "Harmonica",
-    "Harp",
-    "Mandolin",
-    "Marimba",
-    "Oboe",
-    "Organ",
-    "Piano",
-    "Saxophone",
-    "Synthesizer",
-    "Timpani",
-    "Trombone",
-    "Trumpet",
-    "Tuba",
-    "Violin",
-    "Xylophone",
-    "Ukulele",
-    "Steel drum"
+# Define keywords for instrument identification
+instrument_keywords = [
+    "accordion", "guitar", "drum", "violin", "saxophone", "cello", "trumpet", "harp", "flute", "organ",
+    "trombone", "clarinet", "xylophone", "ukulele", "synthesizer", "piano", "harmonica", "oboe", "mandolin",
+    "tuba", "timpani", "marimba", "glockenspiel", "bass", "banjo", "bongo", "tambourine", "kazoo", "cymbal",
+    "triangle", "snare", "conga", "djembe", "bagpipe", "didgeridoo", "steel drum", "melodica", "harpsichord"
 ]
 
-# Reference: https://www.tensorflow.org/hub/tutorials/yamnet
+# Generate a complete instrument list from YAMNet class map
+instrument_list = sorted({cls for cls in all_classes if any(kw in cls.lower() for kw in instrument_keywords)})
 
 # Convert the instrument list into a set for faster lookup operations
 instrument_set = set(instrument_list)
